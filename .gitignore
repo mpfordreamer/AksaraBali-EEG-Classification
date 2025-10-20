@@ -1,0 +1,83 @@
+deployment/
+tests/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+env_skripsi/
+build/
+develop-eggs/
+dist/
+downloads/
+
+# Node/React
+node_modules/
+/dist
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+.coverage
+.pytest_cache/
+
+# Large model files (optional - you can include smaller ones)
+# Uncomment if models are too large (>100MB)
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Additional Python environments
+venv/
+.venv/
+.env
+
+# IDE settings
+.idea/
+.vscode/
+*.sublime-*
+*.swp
+*.swo
+
+# ML specific
+logs/
+wandb/
+*.pkl
+*.npy
+*.npz
+tensorboard/
+checkpoints/
+
+# Python packaging
+*.egg
+*.egg-info/
+MANIFEST
+
+# JavaScript/TypeScript
+.eslintcache
+.npm
+.next/
+out/
+coverage/
+.pnp/
+.pnp.js
+
+# Build artifacts
+dist-ssr/
+storybook-static/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Docker
+.dockerignore
