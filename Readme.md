@@ -1,6 +1,6 @@
 # Aksara Bali EEG Classification
 
-Aplikasi **Deep Learning** untuk mengklasifikasikan sinyal EEG menjadi aksara Bali.
+Aplikasi berbasis **Deep Learning** untuk mengklasifikasikan sinyal EEG menjadi aksara Bali.
 
 - **Backend** — FastAPI (Python 3.10) untuk preprocessing, pelatihan, dan prediksi.  
 - **Frontend** — React + Vite untuk dashboard pengelolaan data, model, dan hasil.
@@ -172,15 +172,12 @@ Untuk lokal:
    - Jalankan preprocessing untuk ekstraksi fitur.
 
 2. **Pelatihan Model**  
-   - Setelah preprocessing, jalankan training **LSTM**.  
+   - Setelah preprocessing, auto menjalankan training **LSTM**.  
    - Model disimpan ke folder `models/` (atau sesuai konfigurasi `MODEL_DIR`).
 
 3. **Prediksi**  
-   - Pilih model terlatih.  
+   - Pilih model terlatih di sidebar.  
    - Upload data EEG baru untuk inferensi.
-
-4. **Visualisasi**  
-   - Lihat **confusion matrix** dan metrik pelatihan pada dashboard.
 
 ---
 
@@ -201,6 +198,6 @@ Buka **issue** untuk diskusi/bug, atau ajukan **pull request** untuk perbaikan/f
 
 ## Lisensi
 
-**MIT License** — tambahkan file `LICENSE` jika belum ada.  
+**MIT License**
 © I Dewa Gede Mahesta Parawangsa  
 [https://www.linkedin.com/in/demahesta](https://www.linkedin.com/in/demahesta)
