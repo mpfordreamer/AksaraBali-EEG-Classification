@@ -1,301 +1,206 @@
 # Aksara Bali EEG Classification
 
-## Deskripsi Proyek
+Aplikasi **Deep Learning** untuk mengklasifikasikan sinyal EEG menjadi aksara Bali.
 
-Aksara Bali EEG Classification adalah aplikasi berbasis **Deep Learning** untuk mengklasifikasikan sinyal EEG menjadi aksara Bali.
-
-- **Backend**: API berbasis FastAPI (Python 3.10) untuk preprocessing, pelatihan, dan prediksi model.
-- **Frontend**: Dashboard interaktif berbasis React + Vite untuk mengelola data, model, dan hasil klasifikasi.
-
-## Fitur Utama
-
-- Preprocessing sinyal EEG (filtering, ekstraksi fitur, baseline reduction)
-- Pelatihan model **Long Short-Term Memory (LSTM)** dengan cross-validation
-- Manajemen model (simpan, muat, hapus)
-- Prediksi aksara Bali dari data EEG baru
-- Visualisasi confusion matrix dan metrik pelatihan
+- **Backend** — FastAPI (Python 3.10) untuk preprocessing, pelatihan, dan prediksi.  
+- **Frontend** — React + Vite untuk dashboard pengelolaan data, model, dan hasil.
 
 ---
 
-## Struktur Direktori
+## Fitur
+
+- Preprocessing sinyal EEG (filtering, ekstraksi fitur, baseline reduction).  
+- Pelatihan **LSTM** dengan cross-validation.  
+- Manajemen model (simpan, muat, hapus).  
+- Prediksi aksara Bali dari data EEG baru.  
+- Visualisasi confusion matrix dan metrik pelatihan.
+
+---
+
+## Struktur Repositori
 
 ```
-
 .
 ├─ api/                      # Backend FastAPI
 │  ├─ main.py
 │  ├─ requirements.txt
 │  └─ runtime.txt
-├─ models/
 ├─ app/                      # Frontend React (Vite)
 │  ├─ App.tsx
 │  └─ package.json
-├─ .env
+├─ models/                   # Model terlatih (.h5)
 ├─ requirements.txt          # Kebutuhan Python global
-(jangan di-push ke repo)
+```
 
-````
+> Direktori/berkas yang **tidak** boleh di-commit: `env_skripsi/`, `.venv/`, `__pycache__/`, `.env`, file model besar.
 
 ---
 
-## Persyaratan Sistem
+## Persyaratan
 
-- **Python**: 3.10.x  
-- **Node.js**: 18.x atau 20.x  
-- **npm**: 9.x atau 10.x  
-- **pip**: 23.x atau lebih baru  
-- **Nginx** (untuk reverse proxy & serving frontend)  
-- **Domain** (misal: `api.domainmu.com` untuk backend dan `app.domainmu.com` untuk frontend) + **SSL** (Let's Encrypt)
+- Python **3.10.x**  
+- Node.js **18.x** atau **20.x**  
+- npm **9.x** atau **10.x**  
+- pip **23.x** atau lebih baru  
 
-> **Catatan:** Di production, **jangan** menjalankan Vite `npm run dev` atau `uvicorn --reload`. Gunakan **build statis** untuk frontend dan **service** untuk backend di belakang Nginx (HTTPS).
+> Untuk deployment production: Nginx + domain + sertifikat SSL (Let's Encrypt).
 
 ---
 
-## Konfigurasi Production (Disarankan)
+## Konfigurasi
 
-### 1) Backend (FastAPI) sebagai service
+### 1) Backend (`api/.env` atau variabel lingkungan)
 
-1. **Siapkan virtual env & dependensi**
-   ```bash
-   cd api
-   python -m venv .venv
-   source .venv/bin/activate   # Windows: .venv\Scripts\activate
-   pip install -r requirements.txt
-````
-
-2. **(Opsional) Konfigurasi CORS di `api/main.py`**
-   Pastikan origin frontend production diizinkan:
-
-   ```python
-   from fastapi.middleware.cors import CORSMiddleware
-
-   origins = [
-       "http://localhost:5173",    # <— GANTI: domain frontend production
-   ]
-
-   app.add_middleware(
-       CORSMiddleware,
-       allow_origins=origins,
-       allow_credentials=True,
-       allow_methods=["*"],
-       allow_headers=["*"],
-   )
-   ```
-
-3. **Jalankan sebagai service (systemd)**
-   Buat file `/etc/systemd/system/aksarabali-api.service`:
-
-   ```ini
-   [Unit]
-   Description=AksaraBali FastAPI
-   After=network.target
-
-   [Service]
-   User=www-data
-   Group=www-data
-   WorkingDirectory=/path/to/repo/api
-   Environment="PATH=/path/to/repo/api/.venv/bin"
-   ExecStart=/path/to/repo/api/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
-   # Jika ingin port internal 9000, ganti --port 9000 (sesuaikan Nginx di bawah)
-   Restart=always
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-   Aktifkan:
-
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl enable aksarabali-api
-   sudo systemctl start aksarabali-api
-   sudo systemctl status aksarabali-api
-   ```
-
-### 2) Frontend (React + Vite) build statis
-
-1. **Build**
-
-   ```bash
-   cd app
-   npm ci        # atau npm install
-   npm run build # menghasilkan folder dist/
-   ```
-
-2. **Deploy hasil build** (serve via Nginx)
-
-   ```bash
-   sudo mkdir -p /var/www/aksarabali-app
-   sudo rsync -a dist/ /var/www/aksarabali-app/
-   ```
-
-### 3) Nginx (reverse proxy + static hosting)
-
-**Site untuk Backend** (`/etc/nginx/sites-available/api.domainmu.com`)
-
-```nginx
-server {
-    server_name api.domainmu.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;  # <— sesuaikan jika service pakai port lain
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-**Site untuk Frontend** (`/etc/nginx/sites-available/app.domainmu.com`)
-
-```nginx
-server {
-    server_name app.domainmu.com;
-
-    root /var/www/aksarabali-app;
-    index index.html;
-
-    # Vite SPA fallback
-    location / {
-        try_files $uri /index.html;
-    }
-}
-```
-
-Aktifkan site & reload:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/api.domainmu.com /etc/nginx/sites-enabled/
-sudo ln -s /etc/nginx/sites-available/app.domainmu.com /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-**Tambahkan SSL (Let's Encrypt)**
-
-```bash
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d api.domainmu.com
-sudo certbot --nginx -d app.domainmu.com
-```
-
----
-
-## Konfigurasi Environment (Production)
-
-### Frontend (`app/.env` atau `.env.production`)
+Tambahkan variabel yang diperlukan backend (contoh):
 
 ```env
-# GANTI dari http://localhost:8000 -> URL API production
-VITE_API_URL=https://api.domainmu.com
+MODEL_DIR=./models
 ```
 
-> Setelah mengubah `.env`, lakukan `npm run build` ulang.
+> Tambahkan variabel lain sesuai kebutuhan kode Anda.
 
-### Backend (opsional `.env` untuk setting lain)
+Jika mengaktifkan CORS, pastikan origin frontend production:
 
-Jika ada konfigurasi di kode yang membaca environment (misal path model, secret, dsb.), definisikan di `.env` lalu baca via `os.getenv(...)`.
+```python
+# di api/main.py (contoh)
+from fastapi.middleware.cors import CORSMiddleware
 
----
+origins = [
+    "https://app.domainmu.com",  # ganti dengan domain frontend Anda
+]
 
-## Endpoint Production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
 
-* **Frontend (Dashboard):** `https://app.domainmu.com`
-* **Backend API:** `https://api.domainmu.com`
-* **Dokumentasi API (Swagger):** `https://api.domainmu.com/docs`
+### 2) Frontend (`app/.env` atau `.env.production`)
 
-> Di dokumentasi/README, **hindari** mencantumkan `http://localhost:5173` atau `http://localhost:8000` untuk pengguna akhir. Gunakan domain production di atas.
+```env
+# URL API backend
+VITE_API_URL=https://api.domainmu.com     # ganti sesuai domain backend Anda
+```
 
----
+Saat pengembangan lokal:
 
-## Cara Penggunaan (Production)
-
-1. **Preprocessing Data EEG**
-
-   * Masuk ke dashboard: `https://app.domainmu.com`
-   * Upload file baseline & data EEG pelatihan (`.mat`).
-   * Jalankan preprocessing untuk ekstraksi fitur.
-
-2. **Pelatihan Model**
-
-   * Setelah preprocessing, mulai training model LSTM.
-   * Model otomatis disimpan (default: `api/models/` di server).
-
-3. **Prediksi**
-
-   * Pilih model terlatih.
-   * Upload data EEG baru untuk prediksi aksara Bali.
-
-4. **Visualisasi**
-
-   * Lihat **confusion matrix** dan metrik pelatihan di dashboard.
+```env
+VITE_API_URL=http://localhost:8000
+```
 
 ---
 
-## Checklist: Ganti Link `localhost` ke Production
+## Instalasi & Menjalankan (Untuk Pengguna GitHub)
 
-* **Frontend**: `app/.env`
+### 1) Clone repositori
 
-  ```diff
-  - VITE_API_URL=http://localhost:8000
-  + VITE_API_URL=https://api.domainmu.com
-  ```
-* **Backend CORS** (`api/main.py`)
+```bash
+git clone <URL-repo-ini>
+cd <nama-folder-repo>
+```
 
-  ```diff
-  - origins = ["http://localhost:5173"]
-  + origins = ["https://app.domainmu.com"]
-  ```
-* **Dokumentasi/README**: gunakan
+### 2) Backend (FastAPI)
 
-  * `https://app.domainmu.com` (Frontend)
-  * `https://api.domainmu.com` (Backend, `/docs`)
+```bash
+cd api
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
 
-> Jika **port internal backend** diubah ke **9000**, sesuaikan:
-> `ExecStart` service systemd (`--port 9000`) dan `proxy_pass` Nginx (`http://127.0.0.1:9000`).
-> URL publik **tetap** di 443/HTTPS melalui Nginx.
+Backend tersedia di: `http://localhost:8000`  
+Swagger UI: `http://localhost:8000/docs`
+
+### 3) Frontend (React + Vite)
+
+Buka terminal baru:
+
+```bash
+cd app
+npm install
+# pastikan VITE_API_URL sudah benar (lihat bagian Konfigurasi)
+npm run dev
+```
+
+Frontend tersedia di: `http://localhost:5173`
 
 ---
 
-## Mode Pengembangan (opsional, lokal)
+## Build & Artefak
 
-* Backend: `uvicorn main:app --reload --port 8000`
-* Frontend: `npm run dev` (Vite di `http://localhost:5173`, pastikan `VITE_API_URL=http://localhost:8000`)
+### Build Frontend untuk Production
 
-> Hanya untuk development lokal. Production mengikuti “Konfigurasi Production”.
+```bash
+cd app
+npm ci
+npm run build      # output: app/dist
+```
+
+### Menjalankan Backend Tanpa `--reload` (simulasi production lokal)
+
+```bash
+cd api
+source .venv/bin/activate
+uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+---
+
+## Endpoint
+
+- Frontend (Dashboard): `https://app.domainmu.com`  
+- Backend API: `https://api.domainmu.com`  
+- Swagger: `https://api.domainmu.com/docs`  
+
+Untuk lokal:
+
+- Frontend: `http://localhost:5173`  
+- Backend: `http://localhost:8000`  
+- Swagger: `http://localhost:8000/docs`
+
+---
+
+## Cara Menggunakan
+
+1. **Preprocessing Data EEG**  
+   - Buka dashboard.  
+   - Upload file baseline dan data **`.mat`**.  
+   - Jalankan preprocessing untuk ekstraksi fitur.
+
+2. **Pelatihan Model**  
+   - Setelah preprocessing, jalankan training **LSTM**.  
+   - Model disimpan ke folder `models/` (atau sesuai konfigurasi `MODEL_DIR`).
+
+3. **Prediksi**  
+   - Pilih model terlatih.  
+   - Upload data EEG baru untuk inferensi.
+
+4. **Visualisasi**  
+   - Lihat **confusion matrix** dan metrik pelatihan pada dashboard.
 
 ---
 
 ## Catatan Penting
 
-* Pastikan file model (`.h5`) dan data (`.mat`) **tidak terlalu besar** agar proses berjalan lancar.
-* **Jangan push** folder `env_skripsi/`, `__pycache__/`, dan file `.env` ke repository.
-* Untuk deployment di **server/VPS**, pastikan environment sesuai versi pada bagian *Persyaratan Sistem*.
+- File model (`.h5`) dan data (`.mat`) sebaiknya **ringkas** agar proses stabil.  
+- **Jangan commit**: `env_skripsi/`, `.venv/`, `__pycache__/`, `.env`, model besar.  
+- Pastikan lingkungan server/VPS sesuai versi pada bagian **Persyaratan**.
 
-> Rekomendasi `.gitignore` singkat:
->
-> ```
-> env_skripsi/
-> .venv/
-> __pycache__/
-> *.pyc
-> .env
-> models/*.h5
-> dist/
-> node_modules/
-> ```
 
 ---
 
 ## Kontribusi
 
-Silakan buat **pull request** atau **issue** jika ingin berkontribusi atau menemukan bug.
+Buka **issue** untuk diskusi/bug, atau ajukan **pull request** untuk perbaikan/fitur.
 
 ---
 
 ## Lisensi
 
-**MIT License** (tambahkan file `LICENSE` jika belum ada)
-© I Dewa Gede Mahesta Parawangsa
-[www.linkedin.com/in/demahesta](https://www.linkedin.com/in/demahesta)
+**MIT License** — tambahkan file `LICENSE` jika belum ada.  
+© I Dewa Gede Mahesta Parawangsa  
+[https://www.linkedin.com/in/demahesta](https://www.linkedin.com/in/demahesta)
