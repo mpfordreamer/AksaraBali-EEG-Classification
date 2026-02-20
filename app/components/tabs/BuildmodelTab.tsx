@@ -3,18 +3,18 @@ import axios from 'axios';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { FileUpload } from '../ui/FileUpload';
-import { 
-    processEEGData, 
-    trainModel, 
-    downloadModel, 
-    listModels, 
-    saveTrainedModel, 
-    getTrainingConfusionMatrix 
+import {
+    processEEGData,
+    trainModel,
+    downloadModel,
+    listModels,
+    saveTrainedModel,
+    getTrainingConfusionMatrix
 } from '../../services/apiService';
 import { Footer } from '../Footer';
-import { 
-    useTrainingState, 
-    setDatasetFile, 
+import {
+    useTrainingState,
+    setDatasetFile,
     setTrainingState,
     setSavingState,
     setModelSaved,
@@ -27,10 +27,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Define interfaces for API responses
 interface ModelInfo {
-  name: string;
-  path: string;
-  size_mb: number;
-  created: string;
+    name: string;
+    path: string;
+    size_mb: number;
+    created: string;
 }
 
 interface ProcessedDataResponse {
@@ -50,10 +50,10 @@ export default function PreprocessingTab(): React.ReactElement {
     const [error, setError] = useState<string | null>(null);
     const [outputFilename, setOutputFilename] = useState<string>("");
     const [processingStatus, setProcessingStatus] = useState<string>("");
-    
+
     // Training states from global state manager
     const { isTraining, isSaving, modelSaved, trainingResults, error: trainingError } = useTrainingState();
-    
+
     // Training specific states
     const [confusionMatrixUrl, setConfusionMatrixUrl] = useState<string>('');
     const [matrixTimestamp, setMatrixTimestamp] = useState<number>(Date.now());
@@ -65,7 +65,7 @@ export default function PreprocessingTab(): React.ReactElement {
     const loadModelsList = useCallback(async () => {
         // Don't reload if we're already loading
         if (isLoadingModels) return;
-        
+
         setIsLoadingModels(true);
         try {
             const response = await listModels();
@@ -77,19 +77,19 @@ export default function PreprocessingTab(): React.ReactElement {
             setIsLoadingModels(false);
         }
     }, [isLoadingModels]);
-    
+
     // Only load models when component mounts
     useEffect(() => {
         loadModelsList();
     }, []); // Empty dependency array
-    
+
     // Refresh confusion matrix when training results change
     useEffect(() => {
         if (trainingResults) {
             refreshConfusionMatrix();
         }
     }, [trainingResults]);
-    
+
     const refreshConfusionMatrix = async () => {
         try {
             const newUrl = await getTrainingConfusionMatrix();
@@ -103,20 +103,20 @@ export default function PreprocessingTab(): React.ReactElement {
 
     const extractParticipantId = (filename: string): string => {
         if (!filename) return "";
-        
+
         // Try to extract patterns like P1, P2, etc.
         const pMatch = /P(\d+)/i.exec(filename);
         if (pMatch) {
             return `P${pMatch[1]}`;
         }
-        
+
         // If no P pattern, try to get ID after last underscore
         if (filename.includes('_')) {
             const parts = filename.split('_');
             const lastPart = parts[parts.length - 1].split('.')[0];
             return lastPart;
         }
-        
+
         // Fall back to timestamp
         return new Date().toISOString().slice(0, 10).replace(/-/g, '');
     };
@@ -126,53 +126,53 @@ export default function PreprocessingTab(): React.ReactElement {
         if (trainingFile) {
             return extractParticipantId(trainingFile.name);
         }
-        
+
         // Fall back to baseline file
         if (baselineFile) {
             return extractParticipantId(baselineFile.name);
         }
-        
+
         // Last resort - generate a timestamp-based ID
         return new Date().toISOString().slice(0, 10).replace(/-/g, '');
     };
 
     const handleProcess = async () => {
         if (!baselineFile || !trainingFile) return;
-        
+
         setIsProcessing(true);
         setProcessedData(null);
         setError(null);
-        setProcessingStatus("Processing EEG data..."); 
+        setProcessingStatus("Processing EEG data...");
         setCurrentStep('preprocessing');
-        
+
         try {
             // Get participant ID from file names
             const participantId = getParticipantId();
-            
+
             // Process the data
             const result = await processEEGData(baselineFile, trainingFile);
             setProcessedData(result);
-            
+
             // Set filename for reference
             const filename = `DE_${participantId}.mat`;
             setOutputFilename(filename);
-            
-            setProcessingStatus("Data processed successfully. Starting model training..."); 
-            
+
+            setProcessingStatus("Data processed successfully. Starting model training...");
+
             // Store processed data info for training
             setProcessedDataForTraining(result);
-            
+
             // Move to training step directly without downloading
             setCurrentStep('training');
-            
+
             // Automatically start training after preprocessing
             setTimeout(() => {
                 handleStartTraining();
             }, 1000);
-            
+
         } catch (err: any) {
             console.error("Error preprocessing data:", err);
-            setError(err.message || "An error occurred during data preprocessing"); 
+            setError(err.message || "An error occurred during data preprocessing");
         } finally {
             setIsProcessing(false);
         }
@@ -192,29 +192,29 @@ export default function PreprocessingTab(): React.ReactElement {
             try {
                 // Create a form with the dataset file from the preprocess API
                 const formData = new FormData();
-                
+
                 // Use the downloadProcessedData function to get the processed MAT file
                 const processedData = await axios.post(`${API_URL}/preprocess/download`, {}, {
                     responseType: 'blob'
                 });
-                
+
                 // Create a File from the Blob
                 const processedFile = new File(
-                    [processedData.data], 
-                    outputFilename || `DE_${getParticipantId()}.mat`, 
+                    [processedData.data],
+                    outputFilename || `DE_${getParticipantId()}.mat`,
                     { type: 'application/octet-stream' }
                 );
-                
+
                 // Append to form data with correct parameter name
                 formData.append('dataset_file', processedFile);
-                
+
                 // Now train with this dataset
                 const metrics = await trainModel(formData);
                 setTrainingResults(metrics);
 
                 // Fetch confusion matrix after successful training
                 await refreshConfusionMatrix();
-                
+
                 // Set processing status after model training is complete
                 setProcessingStatus("Model trained successfully. Saving and downloading model...");
 
@@ -237,16 +237,18 @@ export default function PreprocessingTab(): React.ReactElement {
                     } else {
                         modelFilename = metrics.model_path;
                     }
-                    
+
                     await downloadModel(modelFilename);  // Pass just the filename
                 }
             } catch (downloadErr: any) {
                 console.error("Error getting processed data:", downloadErr);
-                throw new Error("Failed to retrieve processed data for training. Please try again.");
+                // Extract and show the actual API error message
+                const errorMessage = downloadErr.response?.data?.detail || downloadErr.message || "Failed to retrieve processed data for training. Please try again.";
+                throw new Error(errorMessage);
             }
         } catch (err: any) {
             console.error('Error training model:', err);
-            setTrainingError(err.message || 'An error occurred while training the model. Please try again.'); 
+            setTrainingError(err.message || 'An error occurred while training the model. Please try again.');
         } finally {
             setTrainingState(false);
         }
@@ -255,36 +257,36 @@ export default function PreprocessingTab(): React.ReactElement {
     return (
         <div className="space-y-6 flex flex-col min-h-[calc(100vh-200px)]">
             <h2 className="text-xl font-bold">EEG Data Preprocessing &amp; Training</h2>
-            
+
             {/* Step 1: Upload Files */}
             <Card>
                 <div className="grid md:grid-cols-2 gap-6">
                     <FileUpload
                         label="Baseline Data"
-                        description="Select raw baseline file (.mat):" 
+                        description="Select raw baseline file (.mat):"
                         file={baselineFile}
                         onFileChange={setBaselineFile}
                         accept=".mat"
                     />
                     <FileUpload
                         label="Trial Data"
-                        description="Select raw training file (.mat):" 
+                        description="Select raw training file (.mat):"
                         file={trainingFile}
                         onFileChange={setTrainingFile}
                         accept=".mat"
                     />
                 </div>
                 <div className="mt-6">
-                    <Button 
-                        onClick={handleProcess} 
+                    <Button
+                        onClick={handleProcess}
                         disabled={!baselineFile || !trainingFile || isProcessing || isTraining}
                         isLoading={isProcessing || isTraining}
                     >
-                        {isProcessing 
-                            ? "Processing Data..." 
-                            : isTraining 
-                                ? "Training Model..." 
-                                : "Start Training Model"} 
+                        {isProcessing
+                            ? "Processing Data..."
+                            : isTraining
+                                ? "Training Model..."
+                                : "Start Training Model"}
                     </Button>
                 </div>
             </Card>
@@ -299,7 +301,7 @@ export default function PreprocessingTab(): React.ReactElement {
                         <p><strong>Total Timesteps/Seconds:</strong> <code>{processedData.total_timesteps}</code></p>
                         <p><strong>Most Stable Baseline Second:</strong> Second <code>{processedData.best_second}</code> with variance score <code>{processedData.stability_score.toFixed(4)}</code></p>
                     </div>
-                    
+
                     {processingStatus && (
                         <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-md">
                             <div className="flex items-center">
@@ -318,7 +320,7 @@ export default function PreprocessingTab(): React.ReactElement {
                 <>
                     <Card>
                         <h3 className="text-lg font-semibold mb-4">Training Results</h3> {/* Changed to English */}
-                        
+
                         {/* Metrics display */}
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center mb-6">
                             <div className="bg-blue-50 p-4 rounded-lg">
@@ -350,9 +352,9 @@ export default function PreprocessingTab(): React.ReactElement {
                             <h3 className="text-lg font-semibold mb-2">Confusion Matrix</h3>
                             <div className="bg-white p-4 rounded-lg shadow flex justify-center">
                                 {confusionMatrixUrl ? (
-                                    <img 
-                                        src={confusionMatrixUrl} 
-                                        alt="Confusion Matrix" 
+                                    <img
+                                        src={confusionMatrixUrl}
+                                        alt="Confusion Matrix"
                                         className="max-w-full h-auto"
                                         style={{ maxHeight: '500px' }}
                                         key={matrixTimestamp}
@@ -361,7 +363,7 @@ export default function PreprocessingTab(): React.ReactElement {
                                     <p>Confusion matrix not available</p>
                                 )}
                             </div>
-                            
+
                             {/* Add processing status message for model saving and downloading */}
                             <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-md">
                                 <div className="flex items-center">
@@ -369,8 +371,8 @@ export default function PreprocessingTab(): React.ReactElement {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <p className="text-sm text-green-700 font-medium">
-                                        {modelSaved 
-                                            ? "Model successfully saved and downloaded." 
+                                        {modelSaved
+                                            ? "Model successfully saved and downloaded."
                                             : "Saving and downloading model..."}
                                     </p>
                                 </div>
@@ -379,7 +381,7 @@ export default function PreprocessingTab(): React.ReactElement {
                     </Card>
                 </>
             )}
-            
+
             {/* Error Display */}
             {(error || trainingError) && (
                 <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
@@ -400,17 +402,17 @@ export default function PreprocessingTab(): React.ReactElement {
                             </svg>
                             <p className="text-sm font-medium text-blue-700">Training model with 10-fold cross-validation</p> {/* Changed to English */}
                         </div>
-            
+
                         {/* Simplified progress bar for 10-fold */}
                         <div className="mt-2">
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                <div 
+                                <div
                                     className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
-                                    style={{ 
-                                        width: '100%', 
-                                        animationName: 'progressAnimation', 
-                                        animationDuration: '70s', 
-                                        animationTimingFunction: 'steps(10, end)' 
+                                    style={{
+                                        width: '100%',
+                                        animationName: 'progressAnimation',
+                                        animationDuration: '70s',
+                                        animationTimingFunction: 'steps(10, end)'
                                     }}
                                 ></div>
                             </div>

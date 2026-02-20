@@ -74,7 +74,7 @@ export function FileUpload({
                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
               />
             </svg>
-            <p className="text-sm text-gray-600 mb-1">File terpilih:</p>
+            <p className="text-sm text-gray-600 mb-1">Selected file:</p>
             <p className="text-sm font-medium text-blue-600">{file.name}</p>
             <p className="text-xs text-gray-500 mt-1">
               {(file.size / 1024 / 1024).toFixed(2)} MB
@@ -86,7 +86,7 @@ export function FileUpload({
               }}
               className="mt-2 text-xs text-red-500 hover:text-red-700 hover:font-bold transition-all duration-200"
             >
-              Hapus
+              Delete
             </button>
           </div>
         ) : (

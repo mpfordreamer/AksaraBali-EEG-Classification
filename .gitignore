@@ -1,5 +1,4 @@
 deployment/
-tests/
 
 # Python
 __pycache__/

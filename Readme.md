@@ -17,6 +17,42 @@ Aplikasi berbasis **Deep Learning** untuk mengklasifikasikan sinyal EEG menjadi 
 
 ---
 
+## Pengembangan Model
+
+Bagian ini menjelaskan penggunaan skrip Python (`.py`) di folder ini untuk memproses data EEG dan melatih model LSTM.
+
+### Struktur Direktori Data
+Sistem ini menggunakan struktur folder standar `datasets/` untuk aliran data. Pastikan folder berikut tersedia:
+
+- **Input `1D_Data.py`**:
+  - `datasets/raw/CS_Train/` (Data EEG mentah `.mat`)
+  - `datasets/baseline/` (Data baseline `.mat`)
+- **Output `1D_Data.py` / Input `2D_Data.py`**:
+  - `datasets/features/CS_Train/` (Fitur DE hasil ekstraksi)
+- **Output `2D_Data.py` / Input `TrainLSTM.py`**:
+  - `datasets/train/CS_Train/` (Data siap latih untuk LSTM)
+
+### Cara Penggunaan
+
+#### 1. Ekstraksi Fitur (`1D_Data.py`)
+Membaca data dari `datasets/raw` dan menyimpan fitur ke `datasets/features`.
+```bash
+python 1D_Data.py
+```
+
+#### 2. Format Data LSTM (`2D_Data.py`)
+Memproses fitur dari `datasets/features` dan menyimpannya ke `datasets/train`.
+```bash
+python 2D_Data.py
+```
+
+#### 3. Pelatihan Model (`TrainLSTM.py`)
+Melatih model mengambil data dari `datasets/train`.
+```bash
+python TrainLSTM.py
+```
+Output meliputi akurasi pelatihan, validasi, dan confusion matrix.
+
 ## Struktur Repositori
 
 ```
