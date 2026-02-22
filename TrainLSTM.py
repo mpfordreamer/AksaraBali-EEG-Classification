@@ -100,7 +100,7 @@ for file_path in mat_files:
     print(f"Model config -> timesteps={timesteps}, features={features}, "
           f"lstm_units=64, dropout=0.3, lr=1e-3, l2=1e-4, patience={es.patience}")
 
-    # K-Fold Cross Validation-
+    # K-Fold Cross Validation
     losses, val_losses, val_accs = [], [], []
     kf = KFold(n_splits=10, shuffle=False)
     accs, precs, recs, f1s = [], [], [], []

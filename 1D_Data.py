@@ -152,7 +152,7 @@ def baseline_reduction(joined_data, signal_clean):
 # MAIN EXECUTION
 if __name__ == '__main__':
     # Mode selection: "with" (apply baseline reduction) or "without" (skip)
-    # Usage example: python script.py with
+    # Usage example: python script.py with or python script.py without 
     mode = sys.argv[1].strip().lower() if len(sys.argv) > 1 else "with"
     USE_BASELINE = (mode == "with")
 

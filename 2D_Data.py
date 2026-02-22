@@ -1,3 +1,5 @@
+# 2D Data Processing for LSTM (Optional)
+
 import time
 from sklearn import preprocessing
 import scipy.io as sio
