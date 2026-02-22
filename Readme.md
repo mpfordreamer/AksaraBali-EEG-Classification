@@ -83,6 +83,165 @@ Output meliputi akurasi pelatihan, validasi, dan confusion matrix.
 
 ---
 
+## Panduan Lengkap: Instalasi & Menjalankan Sistem
+
+Panduan ini menjelaskan langkah demi langkah untuk menyiapkan dan menjalankan seluruh sistem dari awal.
+
+### Langkah 1: Persiapkan Prasyarat
+
+Pastikan sudah terinstal di komputer Anda:
+
+| Software | Versi | Cek Versi |
+|----------|-------|-----------|
+| Python | 3.10.x | `python --version` |
+| pip | 23.x+ | `pip --version` |
+| Node.js | 18.x / 20.x | `node --version` |
+| npm | 9.x / 10.x | `npm --version` |
+| Git | Terbaru | `git --version` |
+
+### Langkah 2: Clone Repositori
+
+```bash
+git clone <URL-repo-ini>
+cd <nama-folder-repo>
+```
+
+### Langkah 3: Buat Virtual Environment Python
+
+```bash
+# Buat virtual environment
+python -m venv env_skripsi
+
+# Aktivasi (Windows PowerShell)
+env_skripsi\Scripts\Activate.ps1
+
+# Aktivasi (Windows CMD)
+env_skripsi\Scripts\activate.bat
+
+# Aktivasi (Linux/Mac)
+source env_skripsi/bin/activate
+```
+
+> Setelah aktif, prompt terminal akan berubah menjadi `(env_skripsi)`.
+
+### Langkah 4: Install Dependensi Python
+
+```bash
+# Dari root folder proyek (pastikan virtual env aktif)
+pip install -r requirements.txt
+```
+
+Ini akan menginstal semua dependensi termasuk: `numpy`, `scipy`, `scikit-learn`, `tensorflow`, `keras`, `fastapi`, `uvicorn`, `matplotlib`, `pandas`, dll.
+
+### Langkah 5: Siapkan Struktur Data
+
+Pastikan folder dataset sudah tersedia dengan struktur berikut:
+
+```
+datasets/
+├── raw/
+│   └── CS_Train/              ← File .mat EEG mentah
+├── baseline/                  ← File .mat baseline
+├── features/
+│   └── CS_Train/              ← (akan diisi otomatis oleh 1D_Data.py)
+└── train/
+    └── CS_Train/              ← (akan diisi otomatis oleh 2D_Data.py)
+```
+
+Buat folder yang belum ada:
+```bash
+mkdir -p datasets/raw/CS_Train
+mkdir -p datasets/baseline
+mkdir -p datasets/features/CS_Train
+mkdir -p datasets/train/CS_Train
+```
+
+> **Windows CMD:** Gunakan `mkdir datasets\raw\CS_Train` dst.
+
+Letakkan file `.mat` Anda di folder yang sesuai.
+
+### Langkah 6: Jalankan Pipeline Data Processing
+
+Pipeline dijalankan **secara berurutan** — output dari satu skrip menjadi input skrip berikutnya.
+
+#### 6a. Ekstraksi Fitur — `1D_Data.py`
+
+Mengubah data EEG mentah menjadi fitur Differential Entropy (DE).
+
+```bash
+# Dengan baseline reduction (default, direkomendasikan)
+python 1D_Data.py with
+
+# Tanpa baseline reduction
+python 1D_Data.py without
+```
+
+- **Input:** `datasets/raw/CS_Train/*.mat` + `datasets/baseline/*.mat`
+- **Output:** `datasets/features/CS_Train/DE_*.mat`
+
+#### 6b. Format Data LSTM — `2D_Data.py`
+
+Mengubah fitur menjadi format 2D yang siap untuk pelatihan LSTM.
+
+```bash
+python 2D_Data.py
+```
+
+- **Input:** `datasets/features/CS_Train/*.mat`
+- **Output:** `datasets/train/CS_Train/*.mat`
+
+#### 6c. Pelatihan Model — `TrainLSTM.py`
+
+Melatih model LSTM dengan 10-fold cross-validation.
+
+```bash
+python TrainLSTM.py
+```
+
+- **Input:** `datasets/train/CS_Train/*.mat`
+- **Output:** Hasil akurasi, loss, confusion matrix, dan metrik per partisipan.
+
+### Langkah 7: Jalankan Backend (FastAPI)
+
+```bash
+cd api
+pip install -r requirements.txt    # Install dependensi tambahan API (jika ada)
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Backend tersedia di:
+- API: `http://localhost:8000`
+- Swagger UI (dokumentasi API): `http://localhost:8000/docs`
+
+> Flag `--reload` memungkinkan auto-restart saat kode berubah. Hapus untuk mode production.
+
+### Langkah 8: Jalankan Frontend (React + Vite)
+
+Buka **terminal baru** (jangan tutup terminal backend):
+
+```bash
+cd app
+npm install             # Install dependensi Node.js
+npm run dev             # Jalankan dev server
+```
+
+> Pastikan file `.env` di `app/` sudah berisi `VITE_API_URL=http://localhost:8000` sebelum menjalankan.
+
+Frontend tersedia di: `http://localhost:5173`
+
+### Rangkuman Urutan Menjalankan
+
+```
+1. Aktivasi virtual environment
+2. python 1D_Data.py with        ← Ekstraksi fitur
+3. python 2D_Data.py             ← Format data
+4. python TrainLSTM.py           ← Latih model
+5. cd api && uvicorn main:app    ← Backend
+6. cd app && npm run dev         ← Frontend (terminal baru)
+```
+
+---
+
 ## Konfigurasi
 
 ### 1) Backend (`api/.env` atau variabel lingkungan)

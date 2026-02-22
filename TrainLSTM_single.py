@@ -21,8 +21,8 @@ from tensorflow.keras.utils import to_categorical
 # ── Configure: specify the single .mat file name to train ──
 TARGET_FILE = "DE_P1.mat"  # <-- change this to your desired file name
 
-# data folder
-dataset_dir = os.path.join(os.path.dirname(__file__), "Dataset_LSTM", "CS_Train", "with_base") #with base or not
+# data folder (standardized path — same as TrainLSTM.py)
+dataset_dir = os.path.join(os.path.dirname(__file__), "datasets", "train", "CS_Train")
 file_path = os.path.join(dataset_dir, TARGET_FILE)
 
 if not os.path.isfile(file_path):
